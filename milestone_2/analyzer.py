@@ -136,4 +136,3 @@ for i in range(0, 3):  # Assuming the filenames start from 0000.pgm to 1521.pgm
      
      
 
-
