@@ -17,7 +17,7 @@ for i in range(0, 1522):
     else:
         images.append(image)
         window_size = (100, 100)  # Size of the sliding window
-        thresholds = [200000, 200000, 200000, 200000]  # Thresholds for each feature (adjust as needed)
+        thresholds = [200000, 220000, 200000, 200000]  # Thresholds for each feature (adjust as needed)
 
         face = face_classifier.detectMultiScale(
             image, scaleFactor=1.1, minNeighbors=5, minSize=(40, 40)
