@@ -43,116 +43,117 @@ def haar_feature_four_rectangle(integral_img, x, y, width, height):
                    - integral_img[y + height, x + width // 2] + integral_img[y + height // 2, x + width // 2]
     return top_left + bottom_right - top_right - bottom_left
 
-# # AdaBoost Cascade Training
-# class HaarCascadeTrainer:
-#     def __init__(self, positive_samples, negative_samples, num_stages, min_detection_rate, max_false_positive_rate):
-#         self.positive_samples = positive_samples
-#         self.negative_samples = negative_samples
-#         self.num_stages = num_stages
-#         self.min_detection_rate = min_detection_rate
-#         self.max_false_positive_rate = max_false_positive_rate
-#         self.stages = []
+
+# AdaBoost Cascade Training
+class HaarCascadeTrainer:
+    def __init__(self, positive_samples, negative_samples, num_stages, min_detection_rate, max_false_positive_rate):
+        self.positive_samples = positive_samples
+        self.negative_samples = negative_samples
+        self.num_stages = num_stages
+        self.min_detection_rate = min_detection_rate
+        self.max_false_positive_rate = max_false_positive_rate
+        self.stages = []
     
-#     def compute_haar_features(self, integral_images):
-#         features = []
-#         for integral_img in integral_images:
-#             h, w = integral_img.shape
-#             sample_features = []
-#             for y in range(0, h - 24, 4):  # Slide vertically with step size 4
-#                 for x in range(0, w - 24, 4):  # Slide horizontally with step size 4
-#                     # Ensure the feature window fits within the image
-#                     if y + 24 > h or x + 24 > w:
-#                         continue
-#                     sample_features.append([
-#                         haar_feature_two_horizontal(integral_img, x, y, 24, 24),
-#                         haar_feature_two_vertical(integral_img, x, y, 24, 24),
-#                         haar_feature_three_horizontal(integral_img, x, y, 24, 24),
-#                         haar_feature_four_rectangle(integral_img, x, y, 24, 24),
-#                     ])
-#             features.append(np.array(sample_features).flatten())  # Flatten features for each sample
+    def compute_haar_features(self, integral_images):
+        features = []
+        for integral_img in integral_images:
+            h, w = integral_img.shape
+            sample_features = []
+            for y in range(0, h - 24, 4):  # Slide vertically with step size 4
+                for x in range(0, w - 24, 4):  # Slide horizontally with step size 4
+                    # Ensure the feature window fits within the image
+                    if y + 24 > h or x + 24 > w:
+                        continue
+                    sample_features.append([
+                        haar_feature_two_horizontal(integral_img, x, y, 24, 24),
+                        haar_feature_two_vertical(integral_img, x, y, 24, 24),
+                        haar_feature_three_horizontal(integral_img, x, y, 24, 24),
+                        haar_feature_four_rectangle(integral_img, x, y, 24, 24),
+                    ])
+            features.append(np.array(sample_features).flatten())  # Flatten features for each sample
             
-#         return np.array(features)
+        return np.array(features)
 
     
-#     def train_weak_classifier(self, features, labels, weights):
-#         """Train a weak classifier on weighted samples."""
-#         print(f"Features shape: {features.shape}")
-#         num_features = features.shape[1]  # Number of features
-#         best_error = float("inf")
-#         best_classifier = None
+    def train_weak_classifier(self, features, labels, weights):
+        """Train a weak classifier on weighted samples."""
+        print(f"Features shape: {features.shape}")
+        num_features = features.shape[1]  # Number of features
+        best_error = float("inf")
+        best_classifier = None
 
-#         for feature_idx in range(num_features):
-#             # Extract values for a single feature
-#             feature_values = features[:, feature_idx]  # Shape: (N_samples,)
-#             print(f"Feature {feature_idx}, Feature values shape: {feature_values.shape}, Labels shape: {labels.shape}")
+        for feature_idx in range(num_features):
+            # Extract values for a single feature
+            feature_values = features[:, feature_idx]  # Shape: (N_samples,)
+            print(f"Feature {feature_idx}, Feature values shape: {feature_values.shape}, Labels shape: {labels.shape}")
 
-#             # Compute the threshold (e.g., median)
-#             threshold = np.median(feature_values)
+            # Compute the threshold (e.g., median)
+            threshold = np.median(feature_values)
 
-#             # Compute predictions for this feature
-#             predictions = (feature_values >= threshold).astype(int)  # Shape: (N_samples,)
-#             print(f"Feature values shape: {feature_values.shape}, Predictions shape: {predictions.shape}, Labels shape: {labels.shape}")
+            # Compute predictions for this feature
+            predictions = (feature_values >= threshold).astype(int)  # Shape: (N_samples,)
+            print(f"Feature values shape: {feature_values.shape}, Predictions shape: {predictions.shape}, Labels shape: {labels.shape}")
 
-#             # Calculate the weighted error
-#             error = np.sum(weights * (predictions != labels))
+            # Calculate the weighted error
+            error = np.sum(weights * (predictions != labels))
 
-#             # Track the best weak classifier
-#             if error < best_error:
-#                 best_error = error
-#                 alpha = 0.5 * np.log((1 - error) / max(error, 1e-10))  # Avoid division by zero
-#                 best_classifier = (feature_idx, threshold, alpha)
+            # Track the best weak classifier
+            if error < best_error:
+                best_error = error
+                alpha = 0.5 * np.log((1 - error) / max(error, 1e-10))  # Avoid division by zero
+                best_classifier = (feature_idx, threshold, alpha)
 
-#         return best_classifier
+        return best_classifier
 
-#     def train_stage(self, pos_samples, neg_samples, weights):
-#         """Train a single stage of the cascade."""
-#         features = np.vstack([self.compute_haar_features(pos_samples), self.compute_haar_features(neg_samples)])
-#         labels = np.array([1] * len(pos_samples) + [0] * len(neg_samples))
-#         classifiers = []
-#         stage_detection_rate = 0
-#         stage_false_positive_rate = 1
+    def train_stage(self, pos_samples, neg_samples, weights):
+        """Train a single stage of the cascade."""
+        features = np.vstack([self.compute_haar_features(pos_samples), self.compute_haar_features(neg_samples)])
+        labels = np.array([1] * len(pos_samples) + [0] * len(neg_samples))
+        classifiers = []
+        stage_detection_rate = 0
+        stage_false_positive_rate = 1
 
-#         while stage_detection_rate < self.min_detection_rate and stage_false_positive_rate > self.max_false_positive_rate:
-#             weak_classifier = self.train_weak_classifier(features, labels, weights)
-#             feature_idx, threshold, alpha = weak_classifier
+        while stage_detection_rate < self.min_detection_rate and stage_false_positive_rate > self.max_false_positive_rate:
+            weak_classifier = self.train_weak_classifier(features, labels, weights)
+            feature_idx, threshold, alpha = weak_classifier
 
-#             predictions = (features[:, feature_idx] >= threshold).astype(int)
-#             weights *= np.exp(-alpha * labels * (2 * predictions - 1))
-#             weights /= np.sum(weights)
+            predictions = (features[:, feature_idx] >= threshold).astype(int)
+            weights *= np.exp(-alpha * labels * (2 * predictions - 1))
+            weights /= np.sum(weights)
 
-#             classifiers.append(weak_classifier)
-#             stage_detection_rate = np.mean(predictions[:len(pos_samples)] == labels[:len(pos_samples)])
-#             stage_false_positive_rate = np.mean(predictions[len(pos_samples):] != labels[len(pos_samples):])
+            classifiers.append(weak_classifier)
+            stage_detection_rate = np.mean(predictions[:len(pos_samples)] == labels[:len(pos_samples)])
+            stage_false_positive_rate = np.mean(predictions[len(pos_samples):] != labels[len(pos_samples):])
 
-#         return classifiers
+        return classifiers
 
-#     def train(self):
-#         """Train the cascade classifier."""
-#         pos_integral_images = [compute_integral_image(img) for img in self.positive_samples]
-#         neg_integral_images = [compute_integral_image(img) for img in self.negative_samples]
-#         weights = np.hstack([np.ones(len(pos_integral_images)) / len(pos_integral_images),
-#                              np.ones(len(neg_integral_images)) / len(neg_integral_images)])
+    def train(self):
+        """Train the cascade classifier."""
+        pos_integral_images = [compute_integral_image(img) for img in self.positive_samples]
+        neg_integral_images = [compute_integral_image(img) for img in self.negative_samples]
+        weights = np.hstack([np.ones(len(pos_integral_images)) / len(pos_integral_images),
+                             np.ones(len(neg_integral_images)) / len(neg_integral_images)])
 
-#         for stage_idx in range(self.num_stages):
-#             print(f"Training stage {stage_idx + 1}/{self.num_stages}...")
-#             stage_classifiers = self.train_stage(pos_integral_images, neg_integral_images, weights)
-#             self.stages.append(stage_classifiers)
+        for stage_idx in range(self.num_stages):
+            print(f"Training stage {stage_idx + 1}/{self.num_stages}...")
+            stage_classifiers = self.train_stage(pos_integral_images, neg_integral_images, weights)
+            self.stages.append(stage_classifiers)
 
-#         print("Training completed.")
+        print("Training completed.")
 
-# # Example Usage
-# positive_samples = [cv2.imread(f'face-database/BioID_{i:04}.pgm', cv2.IMREAD_GRAYSCALE) for i in range(50)]
-# negative_samples = [np.random.randint(0, 255, (positive_samples[1].shape), dtype=np.uint8) for _ in range(50)]
+# Example Usage
+positive_samples = [cv2.imread(f'face-database/BioID_{i:04}.pgm', cv2.IMREAD_GRAYSCALE) for i in range(50)]
+negative_samples = [np.random.randint(0, 255, (positive_samples[1].shape), dtype=np.uint8) for _ in range(50)]
 
-# trainer = HaarCascadeTrainer(positive_samples, negative_samples, num_stages=5, 
-#                              min_detection_rate=0.995, max_false_positive_rate=0.5)
-# trainer.train()
+trainer = HaarCascadeTrainer(positive_samples, negative_samples, num_stages=5, 
+                             min_detection_rate=0.995, max_false_positive_rate=0.5)
+trainer.train()
 
-# # Save the trained model
-# with open("haar_cascade_model.pkl", "wb") as model_file:
-#     pickle.dump(trainer.stages, model_file)
+# Save the trained model
+with open("haar_cascade_model.pkl", "wb") as model_file:
+    pickle.dump(trainer.stages, model_file)
 
-# print("Model saved successfully!")
+print("Model saved successfully!")
 
 
 # Load the model
