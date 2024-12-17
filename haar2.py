@@ -252,9 +252,55 @@ def combine_bounding_boxes(boxes):
     combined_height = y_max - y_min
 
     return [x_min, y_min, combined_width, combined_height]
+def non_maximum_suppression(boxes, overlap_thresh=0.5):
+    """
+    Perform Non-Maximum Suppression to combine overlapping bounding boxes.
+    :param boxes: List of bounding boxes [x, y, w, h].
+    :param overlap_thresh: IoU threshold to combine boxes.
+    :return: Filtered list of bounding boxes.
+    """
+    if len(boxes) == 0:
+        return []
 
+    # Convert to float for precision
+    boxes = np.array(boxes, dtype="float")
 
-def detect_faces(image, cascade_stages, window_size=(24, 24), step_size=4):
+    # Compute the bottom-right coordinates
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    x2 = boxes[:, 0] + boxes[:, 2]
+    y2 = boxes[:, 1] + boxes[:, 3]
+
+    # Compute areas and sort boxes by bottom-right corner y-coordinates
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+    indices = np.argsort(y2)
+
+    picked_boxes = []
+
+    while len(indices) > 0:
+        # Pick the last box
+        last = indices[-1]
+        picked_boxes.append(boxes[last])
+
+        # Compare this box with the rest
+        xx1 = np.maximum(x1[last], x1[indices[:-1]])
+        yy1 = np.maximum(y1[last], y1[indices[:-1]])
+        xx2 = np.minimum(x2[last], x2[indices[:-1]])
+        yy2 = np.minimum(y2[last], y2[indices[:-1]])
+
+        # Compute the width and height of the intersection area
+        w = np.maximum(0, xx2 - xx1 + 1)
+        h = np.maximum(0, yy2 - yy1 + 1)
+
+        # Compute the Intersection over Union (IoU)
+        overlap = (w * h) / areas[indices[:-1]]
+
+        # Remove overlapping boxes
+        indices = indices[np.where(overlap <= overlap_thresh)[0]]
+
+    return np.array(picked_boxes, dtype="int")
+
+def detect_faces(image, cascade_stages, window_size=(24, 24), step_size=4, nms_threshold=0.5):
     """
     Detect faces in an image and combine features into a single bounding box.
     """
@@ -291,10 +337,14 @@ def detect_faces(image, cascade_stages, window_size=(24, 24), step_size=4):
 
             if is_face:
                 detected_boxes.append([x, y, window_size[0], window_size[1]])
-    return detected_boxes
-    # # Combine bounding boxes into one
-    # final_box = combine_bounding_boxes(detected_boxes)
-    # return final_box
+                
+    # Apply Non-Maximum Suppression to combine overlapping boxes
+    nms_boxes = non_maximum_suppression(detected_boxes, overlap_thresh=nms_threshold)
+    
+    # return nms_boxes
+    # Combine bounding boxes into one
+    final_box = combine_bounding_boxes(nms_boxes)
+    return final_box
 
 good_detection_images = []
 c = 0
@@ -304,15 +354,15 @@ for i in range(50, 71):
     good_detection_images.append(img)
     detected = detect_faces(good_detection_images[c], loaded_stages)
 
-    # # Check if a bounding box is returned
-    # if detected:
-    #     # Unpack the single bounding box
-    #     x, y, w, h = detected
-    #     cv2.rectangle(good_detection_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    # Draw detections
-    for (x, y, w, h) in detected:
+    # Check if a bounding box is returned
+    if detected:
+        # Unpack the single bounding box
+        x, y, w, h = detected
         cv2.rectangle(good_detection_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    # # Draw detections
+    # for (x, y, w, h) in detected:
+    #     cv2.rectangle(good_detection_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     plt.imshow(good_detection_images[c], cmap="gray")
     plt.title("Face Features Detected")
     plt.axis("off")
@@ -330,16 +380,16 @@ for i in range(0, 10):
     
     detected = detect_faces(terrible_face_images[c], loaded_stages)
 
-    # # Check if a bounding box is returned
-    # if detected:
-    #     # Unpack the single bounding box
-    #     x, y, w, h = detected
-    #     cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # Check if a bounding box is returned
+    if detected:
+        # Unpack the single bounding box
+        x, y, w, h = detected
+        cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
 
    
-    #Draw detections
-    for (x, y, w, h) in detected:
-       cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # #Draw detections
+    # for (x, y, w, h) in detected:
+    #    cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     plt.imshow(terrible_face_images[c], cmap="gray")
     plt.title("Face Features Detected With False Positives")
     plt.axis("off")
@@ -357,14 +407,14 @@ for j in ['ant', 'airplanes', 'beaver', 'accordion', 'bonsai', 'brain', 'brontos
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     non_face_images.append(img)
     detected = detect_faces(non_face_images[c], loaded_stages)
-        # Check if a bounding box is returned
+    # Check if a bounding box is returned
     if detected:
         # Unpack the single bounding box
         x, y, w, h = detected
         cv2.rectangle(non_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     # Draw detections
-    #for (x, y, w, h) in detected:
-    #    cv2.rectangle(non_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # for (x, y, w, h) in detected:
+    #     cv2.rectangle(non_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     plt.imshow(non_face_images[c], cmap="gray")
     plt.title("Non-Face Image Features Detected")
     plt.axis("off")
