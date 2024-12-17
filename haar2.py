@@ -195,8 +195,8 @@ def haar_feature_four_rectangle(integral_img, x, y, width, height):
     
 
 
-# trainer = HaarCascadeTrainer(positive_samples, negative_samples, num_stages=5, 
-#                              min_detection_rate=0.995, max_false_positive_rate=0.5)
+# trainer = HaarCascadeTrainer(positive_samples, negative_samples, num_stages=20, 
+#                              min_detection_rate=0.995, max_false_positive_rate=0.3)
 # trainer.train()
 
 # # Save the trained model
@@ -219,6 +219,8 @@ def haar_feature_four_rectangle(integral_img, x, y, width, height):
 # with open("index_map.pkl", "wb") as map_file:
 #     pickle.dump(index_map, map_file)
 
+# Training stops HERE! - Useful for commenting and uncommenting.
+
 
 # Load the model and index map
 with open("haar_cascade_model_2.pkl", "rb") as model_file:
@@ -231,14 +233,35 @@ print("Loaded stages:")
 for i, stage in enumerate(loaded_stages):
     print(f"Stage {i}: {stage}")
 
+def combine_bounding_boxes(boxes):
+    """
+    Combine multiple bounding boxes into a single bounding box.
+    :param boxes: List of bounding boxes [x, y, w, h].
+    :return: A single bounding box [x_min, y_min, width, height].
+    """
+    if len(boxes) == 0:
+        return None
+
+    x_min = min(box[0] for box in boxes)
+    y_min = min(box[1] for box in boxes)
+    x_max = max(box[0] + box[2] for box in boxes)
+    y_max = max(box[1] + box[3] for box in boxes)
+
+    # Calculate new width and height
+    combined_width = x_max - x_min
+    combined_height = y_max - y_min
+
+    return [x_min, y_min, combined_width, combined_height]
+
 
 def detect_faces(image, cascade_stages, window_size=(24, 24), step_size=4):
     """
-    Detect faces in an image using the trained cascade stages.
+    Detect faces in an image and combine features into a single bounding box.
     """
     integral_img = compute_integral_image(image)
-    detected_faces = []
+    detected_boxes = []
 
+    # Sliding window detection
     for y in range(0, image.shape[0] - window_size[1], step_size):
         for x in range(0, image.shape[1] - window_size[0], step_size):
             is_face = True
@@ -246,18 +269,16 @@ def detect_faces(image, cascade_stages, window_size=(24, 24), step_size=4):
                 stage_score = 0
                 for feature_idx, threshold, alpha in stage:
                     feature_name = index_map.get(feature_idx)
-                    if feature_name is None:
-                        raise ValueError(f"Feature index {feature_idx} is not mapped.")
                     
-                    # Compute feature values dynamically based on feature name
+                    # Compute feature dynamically
                     if feature_name == "haar_feature_two_horizontal":
-                        feature_value = haar_feature_two_horizontal(integral_img, x, y, window_size[0], window_size[1])
+                        feature_value = haar_feature_two_horizontal(integral_img, x, y, *window_size)
                     elif feature_name == "haar_feature_two_vertical":
-                        feature_value = haar_feature_two_vertical(integral_img, x, y, window_size[0], window_size[1])
+                        feature_value = haar_feature_two_vertical(integral_img, x, y, *window_size)
                     elif feature_name == "haar_feature_three_horizontal":
-                        feature_value = haar_feature_three_horizontal(integral_img, x, y, window_size[0], window_size[1])
+                        feature_value = haar_feature_three_horizontal(integral_img, x, y, *window_size)
                     elif feature_name == "haar_feature_four_rectangle":
-                        feature_value = haar_feature_four_rectangle(integral_img, x, y, window_size[0], window_size[1])
+                        feature_value = haar_feature_four_rectangle(integral_img, x, y, *window_size)
                     else:
                         raise ValueError(f"Unknown feature: {feature_name}")
                     
@@ -269,9 +290,11 @@ def detect_faces(image, cascade_stages, window_size=(24, 24), step_size=4):
                     break
 
             if is_face:
-                detected_faces.append((x, y, window_size[0], window_size[1]))
-
-    return detected_faces
+                detected_boxes.append([x, y, window_size[0], window_size[1]])
+    return detected_boxes
+    # # Combine bounding boxes into one
+    # final_box = combine_bounding_boxes(detected_boxes)
+    # return final_box
 
 good_detection_images = []
 c = 0
@@ -281,13 +304,19 @@ for i in range(50, 71):
     good_detection_images.append(img)
     detected = detect_faces(good_detection_images[c], loaded_stages)
 
+    # # Check if a bounding box is returned
+    # if detected:
+    #     # Unpack the single bounding box
+    #     x, y, w, h = detected
+    #     cv2.rectangle(good_detection_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+
     # Draw detections
     for (x, y, w, h) in detected:
         cv2.rectangle(good_detection_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     plt.imshow(good_detection_images[c], cmap="gray")
     plt.title("Face Features Detected")
     plt.axis("off")
-    plt.savefig('milestone_3/results/' + f'Good_face_{c:03}', bbox_inches='tight', pad_inches=0)
+    plt.savefig('milestone_4/results/' + f'Good_face_{c:03}', bbox_inches='tight', pad_inches=0)
     plt.close()  # Close the figure after saving
     c +=1
 
@@ -297,14 +326,24 @@ for i in range(0, 10):
     image_path = f'face-database/BioID_{i:04}.pgm'
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     terrible_face_images.append(img)
+    
+    
     detected = detect_faces(terrible_face_images[c], loaded_stages)
-    # Draw detections
+
+    # # Check if a bounding box is returned
+    # if detected:
+    #     # Unpack the single bounding box
+    #     x, y, w, h = detected
+    #     cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+   
+    #Draw detections
     for (x, y, w, h) in detected:
-        cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+       cv2.rectangle(terrible_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     plt.imshow(terrible_face_images[c], cmap="gray")
     plt.title("Face Features Detected With False Positives")
     plt.axis("off")
-    plt.savefig('milestone_3/results/' + f'Terrible_face_{c:03}', bbox_inches='tight', pad_inches=0)
+    plt.savefig('milestone_4/results/' + f'Terrible_face_{c:03}', bbox_inches='tight', pad_inches=0)
     plt.close()  # Close the figure after saving
     c+=1
 
@@ -318,13 +357,18 @@ for j in ['ant', 'airplanes', 'beaver', 'accordion', 'bonsai', 'brain', 'brontos
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     non_face_images.append(img)
     detected = detect_faces(non_face_images[c], loaded_stages)
-    # Draw detections
-    for (x, y, w, h) in detected:
+        # Check if a bounding box is returned
+    if detected:
+        # Unpack the single bounding box
+        x, y, w, h = detected
         cv2.rectangle(non_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
+    # Draw detections
+    #for (x, y, w, h) in detected:
+    #    cv2.rectangle(non_face_images[c], (x, y), (x + w, y + h), (0, 255, 0), 2)
     plt.imshow(non_face_images[c], cmap="gray")
     plt.title("Non-Face Image Features Detected")
     plt.axis("off")
-    plt.savefig('milestone_3/results/' + f'Non_face_{c:03}', bbox_inches='tight', pad_inches=0)
+    plt.savefig('milestone_4/results/' + f'Non_face_{c:03}', bbox_inches='tight', pad_inches=0)
     plt.close()  # Close the figure after saving
     c += 1
 

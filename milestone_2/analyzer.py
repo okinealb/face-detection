@@ -76,8 +76,8 @@ def detect_faces(image, window_size, thresholds):
 images = []
 
 # Loop through image indices (adjust the range if needed)
-for i in range(0, 3):  # Assuming the filenames start from 0000.pgm to 1521.pgm
-    image_path = f'face-database/BioID_{i:04}.pgm'
+for i in range(0, 30):  # Assuming the filenames start from 0000.pgm to 1521.pgm
+    image_path = f'../face-database/BioID_{i:04}.pgm'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     
     # Check if the image was loaded successfully
@@ -85,9 +85,14 @@ for i in range(0, 3):  # Assuming the filenames start from 0000.pgm to 1521.pgm
         print(f"Warning: Could not load image at {image_path}")
     else:
         images.append(image)
-        window_size = (100, 100)  # Size of the sliding window
-        thresholds = [100000, 100000, 100000, 100000]  # Thresholds for each feature
-
+        window_size = (50, 50)  # Size of the sliding window
+        thresholds = [10000, 10000, 10000, 10000]  # Thresholds for each feature
+        integral_img = compute_integral_image(image)
+        # plt.imshow(integral_img, cmap='gray')
+        # plt.title('Integral Image', fontsize=20)
+        # plt.axis('off')
+        # plt.savefig('Integral Image', bbox_inches='tight', pad_inches=0)
+        # plt.close()  # Close the figure after saving
         # Detect faces in the image
         faces = detect_faces(image, window_size, thresholds)
 
@@ -99,7 +104,9 @@ for i in range(0, 3):  # Assuming the filenames start from 0000.pgm to 1521.pgm
         plt.imshow(image, cmap='gray')
         plt.title('Detected Faces')
         plt.axis('off')
-        plt.show()
+        # plt.show()
+        plt.savefig('results/'+f'Integral Image_{i:04}', bbox_inches='tight', pad_inches=0)
+        plt.close()  # Close the figure after saving
         
         
         
