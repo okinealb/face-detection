@@ -1,4 +1,4 @@
-# Milestone 2: Image Integeals and Haar Features
+# Milestone 2: Image Integrals and Haar Features
 This folder contains the implementation of image integrals and the extraction of Haar features for face detection.
 
 ## Goals
