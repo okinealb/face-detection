@@ -2,7 +2,7 @@
 CSC 262 Project
 
 ## Authors
-Albert-Kenneth Okine and Shibam Mukhophadhyay
+Albert-Kenneth Okine and Shibam Mukhopadhyay
 
 ## Overview
 This project focuses on implementing a face detection system designed to detect faces in images and videos using Haar Cascade classifiers. Beginning with OpenCV's pretrained facial detection classifiers, we aim to develeop custom Haar Cascade filters for optimized face detection. The system will eventually output bounding boxes around detected faces, complete with confidence scores.
@@ -13,8 +13,8 @@ This project focuses on implementing a face detection system designed to detect 
 3. **Milestone 3:** Train a face detection classifier using AdaBoost based on the Haar features
 4. **Milestone 4:** Implement real-time face detection and output confidence scores on live video feeds
 
-## Dataset
-We will use the BioID Face Database, which includes 1521 grayscale images and marked eye positions for 23 individuals. This dataset includes frontal views of faces under varying light conditions, making it suitable for our face detection system.
+## Datasets
+We will use the BioID Face Database, Labeled Faces in the Wild Dataset and Caltech 101 Dataset. These will include training and testing data for faces both positive and negative samples.
 
 ## Evaluation
 The project's success will be evaluated based on:
@@ -31,6 +31,6 @@ face-detection/
 ├── milestone_2/        # Image integrals and features 
 ├── milestone_3/        # Face detection classifier training
 ├── milestone_4/        # Optimization of Face Detection
-    ├──Final_Project/
+    ├──Final_Project/   # Our Final trained model
     ├── README.md       # Provides Instructions for Running Final Project
 ├── reports/            # Detailed reports on each milestone
