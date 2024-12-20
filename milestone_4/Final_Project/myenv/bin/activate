@@ -35,7 +35,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/shibammukhopadhyay/Desktop/CSC 262/face-detection/myenv"
+VIRTUAL_ENV="/Users/shibammukhopadhyay/Desktop/CSC 262/face-detection/milestone_4/Final_Project/myenv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

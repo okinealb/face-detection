@@ -50,6 +50,7 @@ def haar_feature_four_rectangle(integral_img, x, y, width, height):
                    - integral_img[y + height, x + width // 2] + integral_img[y + height // 2, x + width // 2]
     return top_left + bottom_right - top_right - bottom_left
 
+# Trainer Class
 class HaarCascadeTrainer:
     def __init__(self, positive_samples, negative_samples, num_stages=5, 
                  min_detection_rate=0.9, max_false_positive_rate=0.4):
@@ -158,7 +159,7 @@ class HaarCascadeTrainer:
                     )
                     
                     if weighted_error < best_error:
-                        best_error = weighted_error  # Changed from error to weighted_error
+                        best_error = weighted_error  
                         best_feature_idx = feature_idx
                         best_threshold = threshold
                         best_polarity = polarity
@@ -252,7 +253,7 @@ class HaarCascadeTrainer:
                     best_stage_dr = stage_dr
                     best_stage_fpr = stage_fpr
                 
-                # Check if we've met our target rates
+                # Check if stage met the target rates
                 if stage_fpr < self.max_false_positive_rate and stage_dr > self.min_detection_rate:
                     print("Target rates achieved - stopping early for this stage")
                     break
@@ -382,6 +383,7 @@ def detect_faces(image, cascade_stages, window_size=(130, 150), scale_factor=1.1
     
     return non_maximum_suppression(detections, min_neighbors)
 
+# The idea of non_maximum_suppression was introduced to us by Peter and Nicholas during their Project presentation
 def non_maximum_suppression(boxes, min_neighbors):
     """Remove overlapping detections, keeping only the strongest ones"""
     if not boxes:
@@ -468,6 +470,8 @@ def test_detector(cascade_model_path, test_image_dir, output_dir):
 
 def main():
     """Main function synthesizes all functions"""
+    
+    # Initialization For Training:
     # Load positive samples (faces)
     positive_samples = []
     for i in range(1800):  # Load 1800 positive samples
@@ -493,10 +497,12 @@ def main():
         trainer = HaarCascadeTrainer(positive_samples, negative_samples)
         trainer.train()
         
-        # Save the trained model
+        # Save the trained model with pickle
         with open('cascade_model.pkl', 'wb') as f:
             pickle.dump(trainer.stages, f)
         print("Model saved successfully!")
+        
+        # Testing!
     if choice == '2':
         print("\nStarting testing phase...")
         test_detector(
@@ -509,7 +515,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # Training phase
     try:
         main()
     except Exception as e:

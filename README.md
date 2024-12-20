@@ -30,5 +30,7 @@ face-detection/
 ├── milestone_1/        # Preliminary facial detection
 ├── milestone_2/        # Image integrals and features 
 ├── milestone_3/        # Face detection classifier training
-├── milestone_4/        # TBD
+├── milestone_4/        # Optimization of Face Detection
+    ├──Final_Project/
+    ├── README.md       # Provides Instructions for Running Final Project
 ├── reports/            # Detailed reports on each milestone
